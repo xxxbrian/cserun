@@ -1,0 +1,17 @@
+[server]
+addr = "cse.unsw.edu.au" # no need to change
+port = 22 # no need to change
+user = "z5555555" # your zID
+
+[auth] # password auth
+type = "password"
+password = "changeme" # optional(but recommand), if not provided this field, the program will prompt for password
+
+# [auth] # key auth
+# type = "key"
+# private_key_path = "/path/to/private/key" # required for key auth
+# # public_key_path = "/path/to/public/key" # optional
+# # passphrase = "secret" # optional
+
+# [auth] # agent auth
+# type = "agent"
