@@ -31,7 +31,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let command_to_exec = args.command;
 
-    println!("Executing command: {}", command_to_exec);
     let mut conf = parse::get_ssh_config();
     conf.command.push_str(command_to_exec.as_str());
     conf.envs = args.env;

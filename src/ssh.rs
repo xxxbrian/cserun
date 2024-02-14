@@ -1,4 +1,6 @@
+use console::{style, Emoji};
 use ignore::WalkBuilder;
+use indicatif::{ProgressBar, ProgressStyle};
 use ssh2::Session;
 use std::fs;
 use std::io::Write;
@@ -6,6 +8,16 @@ use std::io::{self, Read};
 use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+
+static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
+static CLIP: Emoji<'_, '_> = Emoji("🔗  ", "");
+static SPARKLE: Emoji<'_, '_> = Emoji("✨  ", "");
+static NETWORK: Emoji<'_, '_> = Emoji("🌐  ", "");
+static LOCK: Emoji<'_, '_> = Emoji("🔒  ", "");
+static PROHIBITED: Emoji<'_, '_> = Emoji("🚫  ", "");
+static FOLDER: Emoji<'_, '_> = Emoji("📁 ", "");
+static FILE: Emoji<'_, '_> = Emoji("📄 ", "");
+static SPACESHIP: Emoji<'_, '_> = Emoji("🚀  ", "");
 
 pub struct AuthKey {
     pub pubkey: Option<PathBuf>,
@@ -29,10 +41,22 @@ pub struct Config {
 }
 
 pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
-    let tcp = TcpStream::connect(conf.server_addr)?;
+    let tcp = TcpStream::connect(&conf.server_addr)?;
+    println!(
+        "{} {} Connecting to {}",
+        style("[1/5]").bold().dim(),
+        NETWORK,
+        style(conf.server_addr).italic().cyan()
+    );
+
     let mut sess = Session::new()?;
     sess.set_tcp_stream(tcp);
     sess.handshake()?;
+    println!(
+        "{} {} Handshake successful",
+        style("[2/5]").bold().dim(),
+        CLIP
+    );
 
     match conf.auth {
         Auth::Password(p) => {
@@ -57,6 +81,12 @@ pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
             sess.userauth_agent(conf.username.as_str())?;
         }
     }
+    println!(
+        "{} {} Authenticated as {}",
+        style("[3/5]").bold().dim(),
+        LOCK,
+        style(conf.username).italic().green()
+    );
 
     let sftp = sess.sftp()?;
 
@@ -67,24 +97,31 @@ pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
         .to_string();
     let remote_dir = format!(".cserun/temp/{}", temp_dir_name); // ssh2's sftp use ~/ as root, no need to add ~/
     let remote_dir_path = Path::new(&remote_dir);
-    println!("remote_dir: {}", remote_dir);
 
     // create the remote dir
     sftp_mkdir_recursive(&sftp, remote_dir_path)?;
-    println!("Created remote dir: {:?}", remote_dir_path);
 
     // log the command to command.txt
     let mut remote_command_file = sftp.create(remote_dir_path.join("command.txt").as_path())?;
     remote_command_file.write_all(conf.command.as_bytes())?;
-    println!("Uploaded command.txt");
 
     // setup the container dir
     let container_path = remote_dir_path.join("container");
     if !conf.no_sync {
         upload_dir(&sftp, Path::new(local_dir), container_path.as_path())?;
+        println!(
+            "{} {} Synced local files to remote",
+            style("[4/5]").bold().dim(),
+            TRUCK
+        );
     } else {
         // only create the container dir
         sftp.mkdir(container_path.as_path(), 0o755)?;
+        println!(
+            "{} {} Skipped syncing local files",
+            style("[4/5]").bold().dim(),
+            PROHIBITED
+        );
     }
 
     let mut channel = sess.channel_session()?;
@@ -97,14 +134,31 @@ pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
             pre_exec_command.push_str(&format!("export {}={} && ", env[0], env[1]));
         });
     }
+    println!(
+        "{} {} Environment variables set",
+        style("[5/5]").bold().dim(),
+        SPARKLE
+    );
     // before exec, cd to the remote dir
     pre_exec_command.push_str(&format!("cd {}/container && ", remote_dir));
     let command = format!("{}{}", pre_exec_command, conf.command);
     channel.exec(&command)?;
+    println!(
+        "{} {} Command sented: {}",
+        style("[5/5]").bold().dim(),
+        SPACESHIP,
+        style(conf.command).yellow(),
+    );
 
     // set to unblocking mode
     sess.set_blocking(false);
 
+    println!(
+        "{} {} {}",
+        style("===============").bold().magenta(),
+        style("Output").italic().bold().magenta(),
+        style("===============").bold().magenta()
+    );
     let mut buffer = [0; 4096];
     loop {
         if channel.eof() {
@@ -143,7 +197,16 @@ pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     channel.wait_close()?;
-    println!("\nExit status: {}", channel.exit_status()?);
+    println!(
+        "{}",
+        style("======================================")
+            .bold()
+            .magenta()
+    );
+    match channel.exit_status()? {
+        0 => println!("Exit status: {}", style("Success").green()),
+        _status => println!("Exit status: {}", style(format!("Error {}", _status)).red()),
+    }
 
     Ok(())
 }
@@ -174,6 +237,14 @@ fn upload_dir(
         .git_ignore(true) // https://docs.rs/ignore/latest/ignore/struct.WalkBuilder.html#method.git_ignore
         .build();
 
+    let spinner_style = ProgressStyle::default_spinner()
+        .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+        .template("{prefix:.bold.dim} {spinner} {wide_msg}")?;
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(spinner_style);
+    pb.set_prefix("Syncing");
+    pb.enable_steady_tick(Duration::from_millis(100));
+
     for result in walker {
         if let Ok(entry) = result {
             let path = entry.path();
@@ -183,13 +254,18 @@ fn upload_dir(
                 if path.is_dir() {
                     // Make sure the remote directory exists
                     match sftp.mkdir(&remote_path, 0o755) {
-                        Ok(_) => println!("Created directory: {:?}", remote_path),
+                        Ok(_) => pb.set_message(
+                            format!("{} Created remote dir: {:?}", FOLDER, remote_path).to_string(),
+                        ),
                         Err(err) => {
                             println!("Directory creation error (might already exist): {:?}", err)
                         }
                     }
                 } else {
                     upload_file(sftp, path, &remote_path)?;
+                    pb.set_message(
+                        format!("{} Uploaded file: {:?}", FILE, remote_path).to_string(),
+                    );
                 }
             }
         }
@@ -209,7 +285,6 @@ fn upload_file(
 
     let mut remote_file = sftp.create(remote_path)?;
     remote_file.write_all(&contents)?;
-    println!("Uploaded file: {:?}", remote_path);
 
     Ok(())
 }
