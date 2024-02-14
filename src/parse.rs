@@ -113,5 +113,7 @@ pub fn get_ssh_config() -> Config {
         username: config.server.user,
         auth,
         command: String::new(),
+        envs: Vec::new(),
+        no_sync: false,
     }
 }

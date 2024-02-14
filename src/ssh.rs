@@ -24,6 +24,8 @@ pub struct Config {
     pub username: String,
     pub auth: Auth,
     pub command: String,
+    pub envs: Vec<String>,
+    pub no_sync: bool,
 }
 
 pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -78,11 +80,26 @@ pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
 
     // setup the container dir
     let container_path = remote_dir_path.join("container");
-    upload_dir(&sftp, Path::new(local_dir), container_path.as_path())?;
+    if !conf.no_sync {
+        upload_dir(&sftp, Path::new(local_dir), container_path.as_path())?;
+    } else {
+        // only create the container dir
+        sftp.mkdir(container_path.as_path(), 0o755)?;
+    }
 
     let mut channel = sess.channel_session()?;
-    // before exec, try to cd to the remote dir, if failed, exit
-    let command = format!("cd {}/container && {}", remote_dir, conf.command);
+    let mut pre_exec_command = String::new();
+    // set environment variables
+    for env in conf.envs {
+        let env: Vec<&str> = env.split(':').collect();
+        // libssh2's setenv may not work with cse server https://github.com/libssh2/libssh2/issues/546
+        channel.setenv(env[0], env[1]).unwrap_or_else(|_| {
+            pre_exec_command.push_str(&format!("export {}={} && ", env[0], env[1]));
+        });
+    }
+    // before exec, cd to the remote dir
+    pre_exec_command.push_str(&format!("cd {}/container && ", remote_dir));
+    let command = format!("{}{}", pre_exec_command, conf.command);
     channel.exec(&command)?;
 
     // set to unblocking mode
