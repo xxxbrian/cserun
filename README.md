@@ -8,17 +8,13 @@ CSERun is a utility tool designed to assist UNSW CSE students in running course 
 
 ## Installation
 
-To install CSERun, follow these steps:
+To install CSERun directly from the source repository using Cargo, execute the following command:
 
-1. Clone the repository:
 ```sh
-git clone https://github.com/xxxbrian/cserun
+cargo install cserun --git https://github.com/xxxbrian/cserun
 ```
 
-2. Navigate to the cloned directory and install using cargo:
-```sh
-cd cserun && cargo install --path .
-```
+This may take some time due to dependency downloads and compilation.
 
 ## Configuration and Usage
 
