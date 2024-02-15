@@ -135,7 +135,7 @@ cserun --no-sync --env uni:unsw --env faculty:cse "echo \$uni; echo \$faculty"
 [3/5] 🔒   Authenticated as z5555555
 [4/5] 🚫   Skipped syncing local files
 [5/5] ✨   Environment variables set
-[5/5] 🚀   Command sented: echo $uni; echo $camp
+[5/5] 🚀   Command sented: echo $uni; echo $faculty
 =============== Output ===============
 unsw
 cse
