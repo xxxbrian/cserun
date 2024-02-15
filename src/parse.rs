@@ -43,13 +43,17 @@ fn default_config_contents() -> &'static str {
     include_str!("../example.toml")
 }
 
-fn read_config() -> Result<TomlConfig, Box<dyn std::error::Error>> {
+pub fn get_config_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
     let mut config_path = dirs::home_dir().ok_or("Cannot find the config directory")?;
     config_path.push(".config");
     config_path.push("cserun");
     fs::create_dir_all(&config_path)?; // make sure the directory exists
     config_path.push("config.toml");
+    Ok(config_path)
+}
 
+fn read_config() -> Result<TomlConfig, Box<dyn std::error::Error>> {
+    let config_path = get_config_path()?;
     // check if the config file exists
     if !config_path.exists() {
         let mut file = File::create(&config_path)?;

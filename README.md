@@ -40,6 +40,11 @@ cserun "your_command_here"
 
 After the initial run, CSERun will prompt you to create and modify a TOML configuration file. This file contains essential settings for connecting to the CSE server, including server details and authentication method. Here’s a breakdown of the configuration file and how to customize it:
 
+```sh
+# if you forget the configuration file path, you can use the --config option to display it
+cserun --config
+```
+
 #### Server Configuration
 
 ```toml
@@ -106,6 +111,8 @@ cserun [OPTIONS] <COMMAND>
 - `<COMMAND>`: The command you wish to run on the CSE server.
 
 #### Options
+
+- `--config`: This option is used independently of others to display the path of the configuration file used by CSERun. 
 
 - `--no-sync`: Skip the file synchronization step before running the command. This is useful for commands that do not require the local files, such as `6991 classrun -sturec`.
 
