@@ -40,7 +40,7 @@ pub struct Config {
     pub no_sync: bool,
 }
 
-pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
+pub fn exec(conf: Config) -> Result<i32, Box<dyn std::error::Error>> {
     let tcp = TcpStream::connect(&conf.server_addr)?;
     println!(
         "{} {} Connecting to {}",
@@ -203,12 +203,14 @@ pub fn exec(conf: Config) -> Result<(), Box<dyn std::error::Error>> {
             .bold()
             .magenta()
     );
-    match channel.exit_status()? {
+
+    let exit_status = channel.exit_status()?;
+    match exit_status {
         0 => println!("Exit status: {}", style("Success").green()),
         _status => println!("Exit status: {}", style(format!("Error {}", _status)).red()),
     }
 
-    Ok(())
+    Ok(exit_status)
 }
 
 fn sftp_mkdir_recursive(sftp: &ssh2::Sftp, path: &Path) -> Result<(), Box<dyn std::error::Error>> {

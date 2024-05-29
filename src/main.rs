@@ -46,7 +46,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     conf.envs = args.env;
     conf.no_sync = args.no_sync;
     match ssh::exec(conf) {
-        Ok(_) => Ok(()),
+        Ok(exit_code) => {
+            std::process::exit(exit_code);
+        }
         Err(e) => {
             // ask user to check the config file
             let config_path = parse::get_config_path()?;
