@@ -27,7 +27,7 @@ pub struct AuthKey {
 
 pub enum Auth {
     Password(String),
-    AuthKey(AuthKey),
+    Key(AuthKey),
     Agent,
 }
 
@@ -62,12 +62,12 @@ pub fn exec(conf: Config) -> Result<i32, Box<dyn std::error::Error>> {
         Auth::Password(p) => {
             sess.userauth_password(conf.username.as_str(), p.as_str())?;
         }
-        Auth::AuthKey(auth_key) => {
+        Auth::Key(auth_key) => {
             sess.userauth_pubkey_file(
                 conf.username.as_str(),
-                auth_key.pubkey.as_ref().map(|p| p.as_path()),
+                auth_key.pubkey.as_deref(),
                 auth_key.privekey.as_path(),
-                auth_key.passphrase.as_ref().map(|p| p.as_str()),
+                auth_key.passphrase.as_deref(),
             )?;
         }
         Auth::Agent => {
@@ -75,7 +75,7 @@ pub fn exec(conf: Config) -> Result<i32, Box<dyn std::error::Error>> {
             agent.connect()?;
             agent.list_identities()?;
             let identities = agent.identities()?;
-            if identities.len() == 0 {
+            if identities.is_empty() {
                 return Err("No identities found in the ssh-agent".into());
             }
             sess.userauth_agent(conf.username.as_str())?;
@@ -247,28 +247,24 @@ fn upload_dir(
     pb.set_prefix("Syncing");
     pb.enable_steady_tick(Duration::from_millis(100));
 
-    for result in walker {
-        if let Ok(entry) = result {
-            let path = entry.path();
-            // Calculate the relative path
-            if let Ok(strip_path) = path.strip_prefix(local_path) {
-                let remote_path = remote_base_path.join(strip_path);
-                if path.is_dir() {
-                    // Make sure the remote directory exists
-                    match sftp.mkdir(&remote_path, 0o755) {
-                        Ok(_) => pb.set_message(
-                            format!("{} Created remote dir: {:?}", FOLDER, remote_path).to_string(),
-                        ),
-                        Err(err) => {
-                            println!("Directory creation error (might already exist): {:?}", err)
-                        }
+    for entry in walker.flatten() {
+        let path = entry.path();
+        // Calculate the relative path
+        if let Ok(strip_path) = path.strip_prefix(local_path) {
+            let remote_path = remote_base_path.join(strip_path);
+            if path.is_dir() {
+                // Make sure the remote directory exists
+                match sftp.mkdir(&remote_path, 0o755) {
+                    Ok(_) => pb.set_message(
+                        format!("{} Created remote dir: {:?}", FOLDER, remote_path).to_string(),
+                    ),
+                    Err(err) => {
+                        println!("Directory creation error (might already exist): {:?}", err)
                     }
-                } else {
-                    upload_file(sftp, path, &remote_path)?;
-                    pb.set_message(
-                        format!("{} Uploaded file: {:?}", FILE, remote_path).to_string(),
-                    );
                 }
+            } else {
+                upload_file(sftp, path, &remote_path)?;
+                pb.set_message(format!("{} Uploaded file: {:?}", FILE, remote_path).to_string());
             }
         }
     }

@@ -1,5 +1,4 @@
 use crate::ssh::{Auth, AuthKey, Config};
-use dirs;
 use serde::Deserialize;
 use std::{
     fs::{self, File},
@@ -96,15 +95,12 @@ pub fn get_ssh_config() -> Config {
                     std::process::exit(1);
                 }
             };
-            let public_key_path = match config.auth.public_key_path {
-                Some(p) => Some(PathBuf::from(p.as_str())),
-                None => None,
-            };
-            let passphrase = match config.auth.passphrase {
-                Some(p) => Some(p),
-                None => None,
-            };
-            Auth::AuthKey(AuthKey {
+            let public_key_path = config
+                .auth
+                .public_key_path
+                .map(|p| PathBuf::from(p.as_str()));
+            let passphrase = config.auth.passphrase;
+            Auth::Key(AuthKey {
                 pubkey: public_key_path,
                 privekey: private_key_path,
                 passphrase,
