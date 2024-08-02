@@ -1,9 +1,21 @@
-# CSERun
+<div align="center">
+  <img src="./screenshots/cserun-logo.png" alt="UNSW CSERun Logo" width="80"/>
+  <h1>UNSW CSERun 🚀</h1>
+  <p>
+    <a href="https://cserun.bojin.co">Website</a> |
+    <a href="#installation">Installation</a> |
+    <a href="#configuration-and-usage">Configuration and Usage</a> |
+    <a href="#advanced-usage">Advanced Usage</a> |
+    <a href="#examples">Examples</a>
+  </p>
+</div>
+
+---
 
 CSERun is a utility tool designed to assist UNSW CSE students in running course commands such as `autotest` and `give` in their local environment. Powered by Rust, it simplifies the process of executing course-specific commands directly from a local machine.
 
 <p align="center">
-  <img src="./screenshots/cserun.gif" width="50%" />
+  <img src="./screenshots/cserun.gif" width="70%" max-width="55px" alt="CSERun Demo"/>
 </p>
 
 ## Installation
