@@ -8,13 +8,18 @@ CSERun is a utility tool designed to assist UNSW CSE students in running course 
 
 ## Installation
 
-To install CSERun directly from the source repository using Cargo, execute the following command:
+**Homebrew** (recommended way if you are using macOS)
+
+```sh
+brew tap xxxbrian/tap
+brew install cserun
+```
+
+**Cargo**
 
 ```sh
 cargo install cserun --git https://github.com/xxxbrian/cserun
 ```
-
-This may take some time due to dependency downloads and compilation.
 
 ## Configuration and Usage
 
@@ -94,6 +99,7 @@ After choosing and setting up your preferred authentication method, save the cha
 ## Advanced Usage
 
 ### File ignore
+
 To enhance file synchronization speed with the server, CSERun supports `.gitignore` and `.ignore` files. It will exclude files and directories specified in these files from syncing, which is particularly useful for ignoring project-generated directories like `node_modules` and `target`.
 
 ### Arg usage
@@ -108,7 +114,7 @@ cserun [OPTIONS] <COMMAND>
 
 #### Options
 
-- `--config`: This option is used independently of others to display the path of the configuration file used by CSERun. 
+- `--config`: This option is used independently of others to display the path of the configuration file used by CSERun.
 
 - `--no-sync`: Skip the file synchronization step before running the command. This is useful for commands that do not require the local files, such as `6991 classrun -sturec`.
 
