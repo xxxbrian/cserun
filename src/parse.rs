@@ -51,16 +51,21 @@ pub fn get_config_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
     Ok(config_path)
 }
 
+pub fn create_config(config_path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    let mut file = File::create(&config_path)?;
+    file.write_all(default_config_contents().as_bytes())?;
+    println!(
+        "Config file created at {:?}, please fill in the necessary information",
+        config_path
+    );
+    Ok(())
+}
+
 fn read_config() -> Result<TomlConfig, Box<dyn std::error::Error>> {
     let config_path = get_config_path()?;
     // check if the config file exists
     if !config_path.exists() {
-        let mut file = File::create(&config_path)?;
-        file.write_all(default_config_contents().as_bytes())?;
-        eprintln!(
-            "Config file created at {:?}, please fill in the necessary information",
-            config_path
-        );
+        create_config(config_path)?;
         std::process::exit(1);
     }
 

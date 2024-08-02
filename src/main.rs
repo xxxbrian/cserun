@@ -35,7 +35,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     if args.config {
         let config_path = parse::get_config_path()?;
-        println!("Config file path: {}", config_path.display());
+        if !config_path.exists() {
+            parse::create_config(config_path)?;
+        } else {
+            println!("Config file path: {}", config_path.display());
+        }
         return Ok(());
     }
 
