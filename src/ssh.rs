@@ -116,7 +116,7 @@ pub fn exec(conf: Config) -> Result<i32, Box<dyn std::error::Error>> {
         );
     } else {
         // only create the container dir
-        sftp.mkdir(container_path.as_path(), 0o755)?;
+        sftp.mkdir(container_path.as_path(), 0o700)?;
         println!(
             "{} {} Skipped syncing local files",
             style("[4/5]").bold().dim(),
@@ -223,7 +223,7 @@ fn sftp_mkdir_recursive(sftp: &ssh2::Sftp, path: &Path) -> Result<(), Box<dyn st
             }
             return Err(format!("{:?} is not a directory", current_path).into());
         }
-        sftp.mkdir(current_path.as_path(), 0o755)?;
+        sftp.mkdir(current_path.as_path(), 0o700)?;
     }
     Ok(())
 }
@@ -254,7 +254,7 @@ fn upload_dir(
             let remote_path = remote_base_path.join(strip_path);
             if path.is_dir() {
                 // Make sure the remote directory exists
-                match sftp.mkdir(&remote_path, 0o755) {
+                match sftp.mkdir(&remote_path, 0o700) {
                     Ok(_) => pb.set_message(
                         format!("{} Created remote dir: {:?}", FOLDER, remote_path).to_string(),
                     ),
